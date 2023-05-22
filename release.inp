@@ -1,0 +1,35 @@
+#example of input file
+# Detector (xyz for box (type=1) or rz for cylinder // to surface (type=2) or rz for cylinder perp to surface (type=3) )
+D_dim_x: 10.0 cm
+# option cm,mm,m
+D_dim_y: 10.0 cm
+D_dim_z: 10.0 cm
+D_dim_r: 10.0 cm
+D_type: 1 
+#Generated isotropic source (xyz for box (type=1) or rz for cylinder (type=2) )
+en: 200.0 keV
+# option MeV, keV, GeV
+G_dim_x: 5.0 cm
+G_dim_y: 5.0 cm
+G_dim_z: 5.0 cm
+G_dim_r: 2.0 cm
+G_shift_x: 3.0 cm
+G_shift_y: 0.0 cm
+G_shift_z: 0.0 cm
+G_type: 1
+G_file: input_source.root
+G_nev: 100000
+#Geant4 simulation Target (xyz for box (type=1) or rz for cylinder (type=2) )
+T_input: release_sim.inp
+T_type: 1
+T_mat_tg: G4_Cu
+T_mat_out: G4_AIR
+T_dim_x: 10.0 cm
+T_dim_y: 10.0 cm
+T_dim_z: 10.0 cm
+T_dim_r: 5.0 cm
+S_file: output_sim.root
+#Analysis
+O_file: analysis_output.root
+act_density: 3.0 pCi/g
+#option pCi/g Bq/g
