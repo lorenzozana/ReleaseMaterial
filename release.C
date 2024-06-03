@@ -43,12 +43,14 @@ int main(int argc, char **argv){
 	  valcommand.ReplaceAll(";","");
 	  if (valcommand.Contains("keV")) factor = 0.001;
 	  else if (valcommand.Contains("GeV")) factor = 1000.; // default is MeV
+	  else if (valcommand.Contains("eV")) factor = 0.000001; // default is MeV
 	  else factor = 1;
 	  valcommand.ReplaceAll(";","");
 	  valcommand.ReplaceAll(" ","");
 	  valcommand.ReplaceAll("GeV","");
 	  valcommand.ReplaceAll("MeV","");
 	  valcommand.ReplaceAll("keV","");
+	  valcommand.ReplaceAll("eV","");
 	  fData.G_ener = factor*valcommand.Atof();
 	  printf("Energy of decaying photon %.4f MeV\n",fData.G_ener);
 	}
@@ -553,9 +555,9 @@ void  cylinder(int n_event, double radius, double length, double energy, const c
 
 
   TRandom2 *frandom = new TRandom2(0);
-
+  int nprint = n_event / 10;
   for (int i=0; i<n_event; i++) {
-    
+    if( (i%nprint) == 0 ){printf("Event %10d \n", i);}
     // hrand->Fill(frand->GetRandom(0.,TMath::Pi()));
     frandom->Sphere(in_px,in_py,in_pz,1.);
     in_px = in_px *energy;
@@ -597,8 +599,9 @@ void test_x(int n_event, double energy, const char name[100]) {
   tTree->Branch("energy",&energy, "energy/D");
   tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
 
-
+  int nprint = n_event / 10;
   for (int i=0; i<n_event; i++) {
+    if( (i%nprint) == 0 ){printf("Event %10d \n", i);}
     in_px = energy;
     in_py = 0.0;
     in_pz = 0.0;
@@ -628,8 +631,9 @@ void test_y(int n_event, double energy, const char name[100]) {
   tTree->Branch("energy",&energy, "energy/D");
   tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
 
-
+  int nprint = n_event / 10;
   for (int i=0; i<n_event; i++) {
+    if( (i%nprint) == 0 ){printf("Event %10d \n", i);}
     in_px = 0.0;
     in_py = energy;
     in_pz = 0.0;
@@ -658,8 +662,9 @@ void test_z(int n_event, double energy, const char name[100]) {
   tTree->Branch("energy",&energy, "energy/D");
   tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
 
-
+  int nprint = n_event / 10;
   for (int i=0; i<n_event; i++) {
+    if( (i%nprint) == 0 ){printf("Event %10d \n", i);}
     in_px = 0.0;
     in_py = 0.0;
     in_pz = energy;
@@ -695,9 +700,9 @@ void  box(int n_event, double lx, double ly, double lz, double energy, const cha
 
   double theta, phi;
   TRandom2 *frandom = new TRandom2(0);
-
+  int nprint = n_event / 10;
   for (int i=0; i<n_event; i++) {
-    
+    if( (i%nprint) == 0 ){printf("Event %10d \n", i);}
     // hrand->Fill(frand->GetRandom(0.,TMath::Pi()));
     //    frandom->Sphere(in_px,in_py,in_pz,1.);
     theta = acos(2.0*frandom->Uniform()-1.0);
@@ -933,8 +938,8 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
 
   double at_en = 150;
   double weight = 0.0;
-  TF1 *efficiency = new TF1("fa3","5*TMath::Landau(x,[0],[1],0)",0.,2000.); // in KeV
-  efficiency->SetParameters(800.,300.);
+  TGraph *efficiency = new TGraph("efficiency.txt"); // in KeV
+  // efficiency->SetParameters(800.,300.);
 
   // TH1D *Htheta = new TH1D("Htheta","Htheta",1000,-3.14,3.14);
   // double theta1, theta2;

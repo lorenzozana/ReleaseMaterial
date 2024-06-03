@@ -31,6 +31,7 @@ add_executable(Release ${sources} ${headers})
 )
 target_link_libraries(Release ${LINK_LIBRARIES})
 file(COPY release.inp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY efficiency.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
 

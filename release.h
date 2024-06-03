@@ -6,6 +6,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TF1.h"
+#include "TGraph.h"
 #include "TH2D.h"
 #include "TH3D.h"
 #include "TMath.h"
