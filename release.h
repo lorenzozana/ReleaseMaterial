@@ -64,8 +64,11 @@ struct inputdata {
 char input_gen_file[50];
 void Print_Usage();
 void Parse_Args(int *argc, char **argv);
-void  cylinder(int n_event, double radius, double length, double energy, const char name[100]);
-void  box(int n_event, double lx, double ly, double lz, double energy, const char name[100]);
+void cylinder(int n_event, double radius, double length, double energy, const char name[100]);
+void box(int n_event, double lx, double ly, double lz, double energy, const char name[100]);
+void test_x(int n_event, double energy, const char name[100]);
+void test_y(int n_event, double energy, const char name[100]);
+void test_z(int n_event, double energy, const char name[100]);
 void  FillHisto(TH3D *h3d,double leak_x,double leak_y,double leak_z,double mom_x, double mom_y, double mom_z, double weight);
 void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *Hnz, TH3D *h3out, TH3D *h3dbox);
 void analysis(int tdet, const char name_in[100],const char name_out[100],double n_event);

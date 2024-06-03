@@ -424,6 +424,16 @@ int main(int argc, char **argv){
     else if (fData.G_type == 2 ) { //cylinder dim_r = radius, dim_z= length
       cylinder(fData.G_nev,fData.G_dim_r,fData.G_dim_z,fData.G_ener,fData.G_file.Data());
     } 
+    else if (fData.G_type == 3 ) { // test x direction
+      test_x(fData.G_nev,fData.G_ener,fData.G_file.Data());
+    }
+    else if (fData.G_type == 4 ) { // test y direction
+      test_y(fData.G_nev,fData.G_ener,fData.G_file.Data());
+    }
+    else if (fData.G_type == 5 ) { // test z direction
+      test_z(fData.G_nev,fData.G_ener,fData.G_file.Data());
+    }
+
     else std::exit(0);
 
 
@@ -453,11 +463,11 @@ int main(int argc, char **argv){
       outputfile << "/testhadr/WindowThick_r " << fData.W_dim_r << " cm" << std::endl;
       outputfile << "/testhadr/WindowThick_z " << fData.W_dim_z << " cm" << std::endl;
     }
+    outputfile << "/testhadr/VolumeType "<< fData.T_type << std::endl;
     outputfile << "/testhadr/NumberDivZ       1" << std::endl;
     outputfile << "/testhadr/PrintModulo      100000" << std::endl;
     outputfile << "/testhadr/Update" << std::endl;
-    outputfile << "/testhadr/VolumeType "<< fData.T_type << std::endl;
-    outputfile << "/testhadr/InChain          Full;1" << std::endl;
+    outputfile << "/testhadr/InChain          Full" << std::endl;
     outputfile << "/testhadr/Infile " << fData.G_file.Data() << std::endl;
     outputfile << "/testhadr/Physics          QGSP_BERT" << std::endl;
     outputfile << "/run/initialize" << std::endl;
@@ -524,6 +534,7 @@ void Print_Usage() {
 
 void  cylinder(int n_event, double radius, double length, double energy, const char name[100]) {
   
+  printf("Writing Simulation input %s\n",name);
   int pdg = 22;
 
   TH2F * hrand =  new TH2F("hrand","hrand",100,-10.,10.,100,-10.,10.);
@@ -570,10 +581,102 @@ void  cylinder(int n_event, double radius, double length, double energy, const c
 
 }
 
+void test_x(int n_event, double energy, const char name[100]) {
+
+  printf("Writing Simulation input %s\n",name);
+  TFile *fOut = new TFile(name,"RECREATE");
+  TTree * tTree = new TTree("Full", "Full leaking Geant4 Monte Carlo");
+  double in_px, in_py, in_pz, in_vx, in_vy, in_vz;
+  int  in_pdg;
+  tTree->Branch("in_px",&in_px, "in_px/D");
+  tTree->Branch("in_py",&in_py, "in_py/D");
+  tTree->Branch("in_pz",&in_pz, "in_pz/D");
+  tTree->Branch("in_vx",&in_vx, "in_vx/D");
+  tTree->Branch("in_vy",&in_vy, "in_vy/D");
+  tTree->Branch("in_vz",&in_vz, "in_vz/D");
+  tTree->Branch("energy",&energy, "energy/D");
+  tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
+
+
+  for (int i=0; i<n_event; i++) {
+    in_px = energy;
+    in_py = 0.0;
+    in_pz = 0.0;
+    in_vx = fData.G_shift_x;
+    in_vy = fData.G_shift_y;
+    in_vz = fData.G_shift_z;
+    in_pdg = 22;
+    tTree->Fill();    
+  }
+  tTree->Write();
+
+}
+
+void test_y(int n_event, double energy, const char name[100]) {
+
+  printf("Writing Simulation input %s\n",name);
+  TFile *fOut = new TFile(name,"RECREATE");
+  TTree * tTree = new TTree("Full", "Full leaking Geant4 Monte Carlo");
+  double in_px, in_py, in_pz, in_vx, in_vy, in_vz;
+  int  in_pdg;
+  tTree->Branch("in_px",&in_px, "in_px/D");
+  tTree->Branch("in_py",&in_py, "in_py/D");
+  tTree->Branch("in_pz",&in_pz, "in_pz/D");
+  tTree->Branch("in_vx",&in_vx, "in_vx/D");
+  tTree->Branch("in_vy",&in_vy, "in_vy/D");
+  tTree->Branch("in_vz",&in_vz, "in_vz/D");
+  tTree->Branch("energy",&energy, "energy/D");
+  tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
+
+
+  for (int i=0; i<n_event; i++) {
+    in_px = 0.0;
+    in_py = energy;
+    in_pz = 0.0;
+    in_vx = fData.G_shift_x;
+    in_vy = fData.G_shift_y;
+    in_vz = fData.G_shift_z;
+    in_pdg = 22;
+    tTree->Fill();    
+  }
+  tTree->Write();
+
+}
+void test_z(int n_event, double energy, const char name[100]) {
+
+  printf("Writing Simulation input %s\n",name);
+  TFile *fOut = new TFile(name,"RECREATE");
+  TTree * tTree = new TTree("Full", "Full leaking Geant4 Monte Carlo");
+  double in_px, in_py, in_pz, in_vx, in_vy, in_vz;
+  int  in_pdg;
+  tTree->Branch("in_px",&in_px, "in_px/D");
+  tTree->Branch("in_py",&in_py, "in_py/D");
+  tTree->Branch("in_pz",&in_pz, "in_pz/D");
+  tTree->Branch("in_vx",&in_vx, "in_vx/D");
+  tTree->Branch("in_vy",&in_vy, "in_vy/D");
+  tTree->Branch("in_vz",&in_vz, "in_vz/D");
+  tTree->Branch("energy",&energy, "energy/D");
+  tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
+
+
+  for (int i=0; i<n_event; i++) {
+    in_px = 0.0;
+    in_py = 0.0;
+    in_pz = energy;
+    in_vx = fData.G_shift_x;
+    in_vy = fData.G_shift_y;
+    in_vz = fData.G_shift_z;
+    in_pdg = 22;
+    tTree->Fill();    
+  }
+  tTree->Write();
+
+}
 
 
 void  box(int n_event, double lx, double ly, double lz, double energy, const char name[100]) {
   
+  printf("Writing Simulation input %s\n",name);
   int pdg = 22;
 
   TH2F * hrand =  new TH2F("hrand","hrand",100,-10.,10.,100,-10.,10.);
@@ -590,16 +693,21 @@ void  box(int n_event, double lx, double ly, double lz, double energy, const cha
   tTree->Branch("energy",&energy, "energy/D");
   tTree->Branch("in_pdg",&in_pdg, "in_pdg/I");
 
-
+  double theta, phi;
   TRandom2 *frandom = new TRandom2(0);
 
   for (int i=0; i<n_event; i++) {
     
     // hrand->Fill(frand->GetRandom(0.,TMath::Pi()));
-    frandom->Sphere(in_px,in_py,in_pz,1.);
-    in_px = in_px *energy;
-    in_py = in_py *energy;
-    in_pz = in_pz *energy;
+    //    frandom->Sphere(in_px,in_py,in_pz,1.);
+    theta = acos(2.0*frandom->Uniform()-1.0);
+    phi = 2.0*TMath::Pi()*frandom->Uniform();
+    // in_px = in_px *energy;
+    // in_py = in_py *energy;
+    // in_pz = in_pz *energy;
+    in_px = sin(theta)*cos(phi) *energy;
+    in_py = sin(theta)*sin(phi) *energy;
+    in_pz = cos(theta) *energy;
     in_vx = lx * (-0.5+frandom->Uniform(1.)) +fData.G_shift_x;
     in_vy = ly * (-0.5+frandom->Uniform(1.)) +fData.G_shift_y;
     in_vz = lz * (-0.5+frandom->Uniform(1.)) +fData.G_shift_z;

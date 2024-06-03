@@ -30,6 +30,7 @@ add_executable(Release ${sources} ${headers})
   ${ROOT_LIBRARIES} -lThread -lHtml -lGed -lEG -lGeom 
 )
 target_link_libraries(Release ${LINK_LIBRARIES})
+file(COPY release.inp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
 
