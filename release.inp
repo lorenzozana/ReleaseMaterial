@@ -5,6 +5,7 @@ D_dim_x: 5.0 cm
 D_dim_y: 5.0 cm
 D_dim_z: 5.0 cm
 D_dim_r: 5.0 cm
+D_coll: 0
 D_type: 1 
 #Generated isotropic source (xyz for box (type=1) or rz for cylinder (type=2) )
 en: 200.0 keV
