@@ -26,6 +26,7 @@ struct inputdata {
   double D_dim_y;  // 
   double D_dim_z; // detector direction of signal by calibration
   int    D_type ; // detector type ( 1: box ;  2: cylinder (axis // to normal of surface) ; 3: cylinder (axis // to surface)
+  int    D_coll ; // detector collimator ( 1: yes ; 0: no) a collimator that cleans the side of the detector from background
 
 
 
@@ -72,5 +73,6 @@ void test_y(int n_event, double energy, const char name[100]);
 void test_z(int n_event, double energy, const char name[100]);
 void  FillHisto(TH3D *h3d,double leak_x,double leak_y,double leak_z,double mom_x, double mom_y, double mom_z, double weight);
 void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *Hnz, TH3D *h3out, TH3D *h3dbox);
+void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *Hnz, TH3D *h3out, TH3D *h3dbox);
 void analysis(int tdet, const char name_in[100],const char name_out[100],double n_event);
 inputdata fData;

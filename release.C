@@ -215,6 +215,13 @@ int main(int argc, char **argv){
 	  fData.D_type = valcommand.Atoi();
 	  printf("Detector type  %d\n",fData.D_type);
 	}
+	if (valcommand.Contains("D_coll:")) {
+	  valcommand.ReplaceAll("D_coll:","");
+	  valcommand.ReplaceAll(";","");
+	  valcommand.ReplaceAll(" ","");
+	  fData.D_coll = valcommand.Atoi();
+	  printf("Detector collimator  %d\n",fData.D_coll);
+	}
 	if (valcommand.Contains("G_type:")) {
 	  valcommand.ReplaceAll("G_type:","");
 	  valcommand.ReplaceAll(";","");
@@ -234,7 +241,7 @@ int main(int argc, char **argv){
 	  valcommand.ReplaceAll(";","");
 	  valcommand.ReplaceAll(" ","");
 	  fData.T_type = valcommand.Atoi();
-	  printf("Target type  %d\n",fData.D_type);
+	  printf("Target type  %d\n",fData.T_type);
 	}
 	if (valcommand.Contains("T_mat_tg:")) {
 	  valcommand.ReplaceAll("T_mat_tg:","");
@@ -790,6 +797,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
   TVector3 v3at_perp;
   TVector3 v3at_z;
   int at_bin;
+  double conversion_factor;
   
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
@@ -826,6 +834,8 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  v3leak.SetXYZ(leak_x,leak_y,leak_z);
 	  TH3D *h3at = (TH3D *)h3d->Clone("h3at");  // need a clone to set the bin count to 0 when already counted to avoid doublecounting the same bin
 	  if (tdet ==1) { // box detector
+	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
+	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
 	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
 	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
 		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
@@ -837,13 +847,15 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		  v3at = v3at + v3at_z; // adding z shift to location
 		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		  if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		  integ = integ + h3at->GetBinContent(at_bin);
+		  integ = integ + h3at->GetBinContent(at_bin) / conversion_factor ;
 		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		}
 	      }
 	    }
 	  }
 	  if (tdet ==2) { // cylinder detector with z axis parallel to normal to surface
+	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
+	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
 	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
 	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
 		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
@@ -857,7 +869,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		    v3at = v3at + v3at_z; // adding z shift to location
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		    if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		    integ = integ + h3at->GetBinContent(at_bin);
+		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
 		}
@@ -865,6 +877,8 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	    }
 	  }
 	  if (tdet ==3) { // cylinder detector with z axis perpendicular to normal to surface (I use v3z)
+	    conversion_factor = fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the x(or y) direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (x or y axis), the integral will be equal to this number)
+	    if (conversion_factor == 0.0) std::cout << "Cylinder detector x size= 0: Unphysical detector, the code will fail" << std::endl ; 
 	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
 	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
 		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
@@ -880,7 +894,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		    v3at = v3at + v3at_z; // adding z shift to location
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		    if (i==15 && j==20 && k==32) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		    integ = integ + h3at->GetBinContent(at_bin);
+		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
 		}
@@ -902,6 +916,122 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 
 
  }
+
+
+void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *Hnz, TH3D *h3out, TH3D *h3dbox) {
+  
+  //tdet = 1 it is a box detector with z axis parallel to normal to surface
+  //tdet = 2 it is a cylinder detector with z axis parallel to normal to surface
+  //tdet = 3 it is a cylinder detector with z axis perpendicular to normal to surface (I use v3z) .... not sure how to put a collimator here 
+  // conversion factor since we consider just the first bin is 1.
+
+  // at now testing for box
+  double integ = 0.0;
+  double leak_x, leak_y, leak_z;
+  double norm_x, norm_y, norm_z;
+  double at_x, at_y, at_z;
+  TVector3 norm;
+  TVector3 v3z;
+  TVector3 v3perp;
+  TVector3 v3leak;
+  TVector3 v3at;
+  TVector3 v3at_norm;
+  TVector3 v3at_perp;
+  TVector3 v3at_z;
+  int at_bin;
+  
+  for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
+    for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
+      for (int k =0 ; k< h3loc->GetNbinsZ() ; k++) {
+	if (h3loc->GetBinContent(i,j,k) >0.0) { // this bin shows the location where there are leaking photon
+	  // the normal direction is the z direction of the detector
+	  integ = 0.0; // reset the integral to 0.0
+	  // in the detector one direction is fixed and is vertical, the other direction is the normal to the surface, the third direction is so fixed.
+	  v3z.SetXYZ(0.,0.,1.); // vector parallel to the z axis (vertical here)
+	  leak_x = h3loc->GetXaxis()->GetBinCenter(i);
+	  leak_y = h3loc->GetYaxis()->GetBinCenter(j);
+	  leak_z = h3loc->GetZaxis()->GetBinCenter(k);
+	  norm_x = Hnx->GetBinContent(i,j,k);
+	  norm_y = Hny->GetBinContent(i,j,k);
+	  norm_z = Hnz->GetBinContent(i,j,k);
+	  norm.SetXYZ(norm_x,norm_y,norm_z);
+	  norm.SetMag(1.); // direction of calibration of detector normalized to 1. 
+	  v3perp = norm.Cross(v3z); // now I have the third direction of the detector
+	  if (v3perp.Mag() != 1.0 && v3perp.Mag()!=0.0 ) { // norm has a component in the y axis but is not in the y axis
+	    v3perp.SetMag(1.); // now set the magnitude to 1 and it is normal to v3z and norm
+	    v3z = v3perp.Cross(norm); // now is normal to norm and v3perp and can be used as part of 3 axis
+	  }
+	  else if (v3perp.Mag() == 0.0) { // this means that norm and v3z are in the same direction
+	    v3z.SetXYZ(1.,0.,0.); // now it is parallel to the X axis
+	    v3perp = norm.Cross(v3z); // now I have the third direction of the detector    
+	  }
+	  v3perp.SetMag(1.); // normalize to 1.
+	  //	  cout << i << " " << j << " " << k << " " << v3z.X()  << " " << v3z.Y()  << " " << v3z.Z()  << " " << v3perp.X()  << " " << v3perp.Y()  << " " << v3perp.Z() << " " << norm.X()  << " " << norm.Y()  << " " << norm.Z() << endl;
+
+	  //	  cout << "Angle=" << norm.Angle(v3z) << "\t vrperp size =" << v3perp.Mag() << endl;
+	  at_x = leak_x ;
+	  at_y = leak_y ;
+	  at_z = leak_z ;
+	  v3leak.SetXYZ(leak_x,leak_y,leak_z);
+	  TH3D *h3at = (TH3D *)h3d->Clone("h3at");  // need a clone to set the bin count to 0 when already counted to avoid doublecounting the same bin
+	  if (tdet ==1) { // box detector
+	    for (int ii=0 ; ii<1 ; ii++) { // just the front bin in Dim_z direction that is parallel to norm
+	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
+		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
+		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
+		  v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		  v3at = v3at + v3at_perp; // adding perp shift to location
+		  v3at = v3at + v3at_z; // adding z shift to location
+		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		  if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		  integ = integ + h3at->GetBinContent(at_bin) ;
+		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
+		}
+	      }
+	    }
+	  }
+	  if (tdet ==2) { // cylinder detector with z axis parallel to normal to surface
+	    for (int ii=0 ; ii<1 ; ii++) { // just the first bin in the direction
+	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
+		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
+		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
+		  v3at = v3at_perp + v3at_z; // checking if radius (dim_x/2 = dim_y/2) is less than shift in the detector
+		  if (v3at.Mag() < fData.D_dim_x/2) {
+		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		    v3at = v3at + v3at_perp; // adding perp shift to location
+		    v3at = v3at + v3at_z; // adding z shift to location
+		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		    if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		    integ = integ + h3at->GetBinContent(at_bin);
+		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
+		  }
+		}
+	      }
+	    }
+	  }
+	  if (tdet ==3) { // cylinder detector with z axis perpendicular to normal to surface (I use v3z)
+	    std::cout << "SORRY, I HAVE NO IDEA HOW TO PUT A COLLIMATOR IN THIS CASE !!!!!!!!!!!!!!" << std::endl;
+	  }
+
+	  //	  cout << i << " " << j << " " << k << endl;
+	  h3out->SetBinContent(i,j,k,integ); // Set the new value
+	  h3at->Delete();
+	}
+	// now I need to loop in the 3 dimensions with full lenght in dim_z (parallel to norm  and +/- 0.5 length in dim_x and dim_y
+	// then I store the integral value (I have constructed the histogram to give me this answer) in a new histogram.
+	// since this method has a binning issue a fine binning should solve the problem (also if it will make it slower).
+	
+      }
+    }
+  }
+
+
+ }
+
 
 void analysis(int tdet, const char name_in[100],const char name_out[100],double n_event) {
   //tdet = 1 it is a box detector with z axis parallel to normal to surface
@@ -957,7 +1087,7 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
 
   for (int i=0; i<T->GetEntries(); i++) {
     T->GetEntry(i);
-    weight = efficiency->Eval(ener)/n_event;
+    weight = efficiency->Eval(ener*1000)/n_event;
     if (ener == 200.0) {
       Hxy->Fill(vert_x,vert_y);
     }
@@ -996,7 +1126,8 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   }
   //  efficiency->Draw();
   // Htheta->Write();
-  get_detector(tdet,Hxyz,H3dloc,Hnx,Hny,Hnz,H3dout,H3dbox);
+  if (fData.D_coll == 0) get_detector(tdet,Hxyz,H3dloc,Hnx,Hny,Hnz,H3dout,H3dbox);
+  else get_detector_coll(tdet,Hxyz,H3dloc,Hnx,Hny,Hnz,H3dout,H3dbox);
   TFile *fout = new TFile(name_out,"RECREATE");
   efficiency->Write();
   Hxy->Write();
