@@ -798,11 +798,13 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
   TVector3 v3at_z;
   int at_bin;
   double conversion_factor;
+  int at_det = 0;
   
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
       for (int k =0 ; k< h3loc->GetNbinsZ() ; k++) {
 	if (h3loc->GetBinContent(i,j,k) >0.0) { // this bin shows the location where there are leaking photon
+	  at_det++;
 	  // the normal direction is the z direction of the detector
 	  integ = 0.0; // reset the integral to 0.0
 	  // in the detector one direction is fixed and is vertical, the other direction is the normal to the surface, the third direction is so fixed.
@@ -846,7 +848,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		  v3at = v3at + v3at_perp; // adding perp shift to location
 		  v3at = v3at + v3at_z; // adding z shift to location
 		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		  if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		  if (at_det==10 || at_det==100 || at_det==200) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // show an example for detector number 10
 		  integ = integ + h3at->GetBinContent(at_bin) / conversion_factor ;
 		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		}
@@ -856,19 +858,19 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  if (tdet ==2) { // cylinder detector with z axis parallel to normal to surface
 	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
 	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
-	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
-	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
-		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+	    for (int ii=0 ; ii<ceil(fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
+	      for (int jj=0 ; jj<ceil(fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1)) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
+		for (int kk=0 ; kk<ceil(fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1)) ; kk++) {
 		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
 		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
 		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
 		  v3at = v3at_perp + v3at_z; // checking if radius (dim_x/2 = dim_y/2) is less than shift in the detector
-		  if (v3at.Mag() < fData.D_dim_x/2) {
+		  if (v3at.Mag() < fData.D_dim_x) {
 		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
 		    v3at = v3at + v3at_perp; // adding perp shift to location
 		    v3at = v3at + v3at_z; // adding z shift to location
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		    if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		    if (at_det==10 || at_det==100 || at_det==200) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
 		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
@@ -888,12 +890,12 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		  v3at = -0.5 * fData.D_dim_z * norm + v3at_perp + v3at_norm; // adding shift since center is not at leak surface
 		  // v3at = v3at + v3at_perp;
 		  // v3at = v3at + v3at_norm; // checking if radius (dim_z/2) is less than shift in the detector
-		  if (v3at.Mag() < fData.D_dim_z/2) {
+		  if (v3at.Mag() < fData.D_dim_x) {
 		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
 		    v3at = v3at + v3at_perp; // adding perp shift to location
 		    v3at = v3at + v3at_z; // adding z shift to location
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		    if (i==15 && j==20 && k==32) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		    if (at_det==10 || at_det==100 || at_det==200) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
 		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
@@ -939,11 +941,14 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
   TVector3 v3at_perp;
   TVector3 v3at_z;
   int at_bin;
+  int at_det = 0;
+  double test_r;
   
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
       for (int k =0 ; k< h3loc->GetNbinsZ() ; k++) {
 	if (h3loc->GetBinContent(i,j,k) >0.0) { // this bin shows the location where there are leaking photon
+	  at_det++;
 	  // the normal direction is the z direction of the detector
 	  integ = 0.0; // reset the integral to 0.0
 	  // in the detector one direction is fixed and is vertical, the other direction is the normal to the surface, the third direction is so fixed.
@@ -985,7 +990,7 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 		  v3at = v3at + v3at_perp; // adding perp shift to location
 		  v3at = v3at + v3at_z; // adding z shift to location
 		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		  if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		  if (at_det==10 || at_det==100 || at_det==200) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // writing down detector number 10
 		  integ = integ + h3at->GetBinContent(at_bin) ;
 		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		}
@@ -994,18 +999,26 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 	  }
 	  if (tdet ==2) { // cylinder detector with z axis parallel to normal to surface
 	    for (int ii=0 ; ii<1 ; ii++) { // just the first bin in the direction
-	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
-		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+	      for (int jj=0 ; jj<2*fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
+		for (int kk=0 ; kk<2*fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
 		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
 		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
 		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
-		  v3at = v3at_perp + v3at_z; // checking if radius (dim_x/2 = dim_y/2) is less than shift in the detector
-		  if (v3at.Mag() < fData.D_dim_x/2) {
+		  v3at = v3at_perp + v3at_z; // checking if radius (dim_x = dim_y) is less than shift in the detector
+		  test_r = v3at.Mag();
+		  if (at_det==10 || at_det==100 || at_det==200) {
+		    std::cout << at_det << " " << test_r << " " << fData.D_dim_x << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
+		  }
+		  if (v3at.Mag() < fData.D_dim_x) {
+		    test_r = v3at.Mag();
 		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
 		    v3at = v3at + v3at_perp; // adding perp shift to location
 		    v3at = v3at + v3at_z; // adding z shift to location
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		    if (i==26 && j==25 && k==21) h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		    if (at_det==10 || at_det==100 || at_det==200) {
+		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+		      std::cout <<"Passed " <<  at_det << " " << test_r << " " << fData.D_dim_x << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
+		    }
 		    integ = integ + h3at->GetBinContent(at_bin);
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
@@ -1071,19 +1084,23 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   TGraph *efficiency = new TGraph("efficiency.txt"); // in KeV
   // efficiency->SetParameters(800.,300.);
 
+  int bin_histo_x = int(fData.W_dim_x)*2 +40; // ensuring good enough resolution in x y z
+  int bin_histo_y = int(fData.W_dim_y)*2 +40;
+  int bin_histo_z = int(fData.W_dim_z)*2 +40;
+
   // TH1D *Htheta = new TH1D("Htheta","Htheta",1000,-3.14,3.14);
   // double theta1, theta2;
-  TH3D *Hnx =  new TH3D("Hnx","Norm X",40,-20.,20.,40,-20.,20.,60,-30.,30.); // cm size bins
-  TH3D *Hny =  new TH3D("Hny","Norm Y",40,-20.,20.,40,-20.,20.,60,-30.,30.); // cm size bins
-  TH3D *Hnz =  new TH3D("Hnz","Norm Z",40,-20.,20.,40,-20.,20.,60,-30.,30.); // cm size bins
+  TH3D *Hnx =  new TH3D("Hnx","Norm X",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // cm size bins
+  TH3D *Hny =  new TH3D("Hny","Norm Y",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // cm size bins
+  TH3D *Hnz =  new TH3D("Hnz","Norm Z",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // cm size bins
   int in;
   double in_v, in_w;
 
   TH2D *Hxy = new TH2D("Hxy","Histogram XY",100,-0.5,0.5,100,-0.5,0.5);
-  TH3D *Hxyz = new TH3D("Hxyz","Histogram XYZ",40,-20.,20.,40,-20.,20.,60,-30.,30.); // mm size bins
-  TH3D *H3dout = new TH3D("H3dout","Histogram XYZ",40,-20.,20.,40,-20.,20.,60,-30.,30.); // mm size bins
-  TH3D *H3dloc = new TH3D("H3dloc","Histogram XYZ",40,-20.,20.,40,-20.,20.,60,-30.,30.); // mm size bins
-  TH3D *H3dbox = new TH3D("H3dbox","Histogram XYZ",40,-20.,20.,40,-20.,20.,60,-30.,30.); // mm size bins
+  TH3D *Hxyz = new TH3D("Hxyz","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // mm size bins
+  TH3D *H3dout = new TH3D("H3dout","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // mm size bins
+  TH3D *H3dloc = new TH3D("H3dloc","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // mm size bins
+  TH3D *H3dbox = new TH3D("H3dbox","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-10,fData.W_dim_x/2+10,bin_histo_y,-fData.W_dim_y/2-10,fData.W_dim_y/2+10,bin_histo_z,-fData.W_dim_z/2-10,fData.W_dim_z/2+10); // mm size bins
 
   for (int i=0; i<T->GetEntries(); i++) {
     T->GetEntry(i);
