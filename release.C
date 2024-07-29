@@ -759,8 +759,11 @@ void  FillHisto(TH3D *h3d,double leak_x,double leak_y,double leak_z,double mom_x
     fData.D_dim_x = fData.D_dim_r;
     fData.D_dim_y = fData.D_dim_r;
   }
+  TVector3 det_dim;
+  det_dim.SetXYZ(fData.D_dim_x,fData.D_dim_y,fData.D_dim_z);
+  double det_dim_max = det_dim.Mag(); // this will set the layer size around where the detector could be placed
   h3d->Fill(leak_x,leak_y,leak_z,weight/(fData.D_dim_z/h3d->GetZaxis()->GetBinWidth(1))); // the weight is so that is equal to the efficiency if it pass through the full detector (calibrated to record in the z direction)
-  while ( TMath::Abs(at_x -leak_x) < fData.D_dim_x && TMath::Abs(at_y -leak_y) < fData.D_dim_y &&  TMath::Abs(at_z -leak_z) < fData.D_dim_z ) {
+  while ( TMath::Abs(at_x -fData.W_dim_x) < det_dim_max && TMath::Abs(at_y - fData.W_dim_y) < det_dim_max &&  TMath::Abs(at_z -fData.W_dim_z) < det_dim_max ) { // definition of the layer surrounding the "Window", that is the location of leakage
     bat_x = h3d->GetXaxis()->FindBin(at_x);
     bat_y = h3d->GetYaxis()->FindBin(at_y);
     bat_z = h3d->GetZaxis()->FindBin(at_z);
@@ -1108,14 +1111,14 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
     if (ener == 200.0) {
       Hxy->Fill(vert_x,vert_y);
     }
-    H3dloc->Fill(leak_x,leak_y,leak_z,weight);
+    H3dloc->Fill(leak_x,leak_y,leak_z,weight); // this fills the location of the leak outside the surface with the weight decided by the efficiency at this energy
     FillHisto(Hxyz,leak_x,leak_y,leak_z,mom_x,mom_y,mom_z,weight);
     in = Hnx->FindBin(leak_x,leak_y,leak_z); // this bin is the same in all these histograms since they have the same dimensions
-    in_v =  Hnx->GetBinContent(in);
-    in_w = Hnx->GetBinError(in);
+    in_v =  Hnx->GetBinContent(in); // this is the value of the current average of the bin
+    in_w = Hnx->GetBinError(in); // this is the number of values used for calculating the average: It is stored for semplicity in the error of the bin
     in_v = (in_v *in_w + norm_x) / (in_w + 1.); // this creates an average of norm_x in the bin
     in_w = in_w + 1.; // increase the number of points
-    Hnx->SetBinContent(in,in_v);
+    Hnx->SetBinContent(in,in_v); //store back the new values and overwrite the old ones
     Hnx->SetBinError(in,in_w);
     in_v =  Hny->GetBinContent(in);
     in_w = Hny->GetBinError(in);
