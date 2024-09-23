@@ -1127,18 +1127,27 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   int bin_histo_y = ceil(fData.W_dim_y/min_dim)*10 +ceil(2*max_dim/min_dim)*10;
   int bin_histo_z = ceil(fData.W_dim_z/min_dim)*10 +ceil(2*max_dim/min_dim)*10;
 
+  int bin2_histo_x =  ceil(fData.W_dim_x/min_dim) +ceil(2*max_dim/min_dim);
+  if ((bin2_histo_x - 2*(bin2_histo_x/2))== 0) bin2_histo_x++;
+  int bin2_histo_y =  ceil(fData.W_dim_y/min_dim) +ceil(2*max_dim/min_dim);
+  if ((bin2_histo_y - 2*(bin2_histo_y/2))== 0) bin2_histo_y++;
+  int bin2_histo_z =  ceil(fData.W_dim_z/min_dim) +ceil(2*max_dim/min_dim);
+  if ((bin2_histo_z - 2*(bin2_histo_z/2))== 0) bin2_histo_z++;
+
+  printf("bin_X=%d  bin_Y=%d  bin_Z=%d \n",bin2_histo_x,bin2_histo_y,bin2_histo_z);
+
   // TH1D *Htheta = new TH1D("Htheta","Htheta",1000,-3.14,3.14);
   // double theta1, theta2;
-  TH3D *Hnx =  new TH3D("Hnx","Norm X",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // cm size bins
-  TH3D *Hny =  new TH3D("Hny","Norm Y",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // cm size bins
-  TH3D *Hnz =  new TH3D("Hnz","Norm Z",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // cm size bins
+  TH3D *Hnx =  new TH3D("Hnx","Norm X",bin_histo_x/10,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y/10,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z/10,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // detector size bins
+  TH3D *Hny =  new TH3D("Hny","Norm Y",bin_histo_x/10,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y/10,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z/10,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // detector size bins
+  TH3D *Hnz =  new TH3D("Hnz","Norm Z",bin_histo_x/10,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y/10,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z/10,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // detector size bins
   int in;
   double in_v, in_w;
 
   TH2D *Hxy = new TH2D("Hxy","Histogram XY",100,-0.5,0.5,100,-0.5,0.5);
   TH3D *Hxyz = new TH3D("Hxyz","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
-  TH3D *H3dout = new TH3D("H3dout","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
-  TH3D *H3dloc = new TH3D("H3dloc","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
+  TH3D *H3dout = new TH3D("H3dout","Histogram XYZ",bin_histo_x/10,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y/10,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z/10,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
+  TH3D *H3dloc = new TH3D("H3dloc","Histogram XYZ",bin_histo_x/10,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y/10,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z/10,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
   TH3D *H3dbox = new TH3D("H3dbox","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
 
   for (int i=0; i<T->GetEntries(); i++) {
