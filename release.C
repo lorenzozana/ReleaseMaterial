@@ -764,7 +764,9 @@ void  FillHisto(TH3D *h3d,double leak_x,double leak_y,double leak_z,double mom_x
   double det_dim_max = det_dim.Mag(); // this will set the layer size around where the detector could be placed and is the diagonal of the detector
   //  if (fData.D_coll == 0) h3d->Fill(leak_x,leak_y,leak_z,weight/(fData.D_dim_z/h3d->GetZaxis()->GetBinWidth(1))); // the weight is so that is equal to the efficiency if it pass through the full detector (calibrated to record in the z direction)
   h3d->Fill(at_x,at_y,at_z,weight); // the counts through the full detector is count is already taken care at get_detector
-  while ( TMath::Abs(at_x -fData.W_dim_x) < det_dim_max && TMath::Abs(at_y - fData.W_dim_y) < det_dim_max &&  TMath::Abs(at_z -fData.W_dim_z) < det_dim_max ) { // definition of the layer surrounding the "Window", that is the location of leakage
+  while ( TMath::Abs(at_x) < det_dim_max + fData.W_dim_x  && TMath::Abs(at_y) < det_dim_max + fData.W_dim_y &&  TMath::Abs(at_z) < det_dim_max +fData.W_dim_z ) { 
+
+    //  while ( TMath::Abs(at_x -leak_x) < det_dim_max && TMath::Abs(at_y - leak_y) < det_dim_max &&  TMath::Abs(at_z -leak_z) < det_dim_max ) { // definition of the layer surrounding the "Window", that is the location of leakage
     bat_x = h3d->GetXaxis()->FindBin(at_x);
     bat_y = h3d->GetYaxis()->FindBin(at_y);
     bat_z = h3d->GetZaxis()->FindBin(at_z);
@@ -808,6 +810,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
   int at_det = 0;
   
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
+    std::cout << "Scanning x bin " << i << " of total " << h3loc->GetNbinsX() << std::endl;
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
       for (int k =0 ; k< h3loc->GetNbinsZ() ; k++) {
 	if (h3loc->GetBinContent(i,j,k) >0.0) { // this bin shows the location where there are leaking photon
@@ -857,7 +860,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		  if (at_det==10 || (at_det%1000) == 0 ) {
 		    h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // show an example for detector number 10
-		    std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		    //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
 		  }
 		  integ = integ + h3at->GetBinContent(at_bin) / conversion_factor ;
 		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
@@ -882,7 +885,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		    if (at_det==10 || (at_det%1000) == 0) {
 		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		      std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
 		    }
 		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
@@ -910,7 +913,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		    if (at_det==10 || (at_det%1000) == 0) {
 		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		      std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
 		    }
 		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
 		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
@@ -961,6 +964,8 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
   double test_r;
   
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
+    std::cout << "Scanning x bin " << i << " of total " << h3loc->GetNbinsX() << std::endl;
+
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
       for (int k =0 ; k< h3loc->GetNbinsZ() ; k++) {
 	if (h3loc->GetBinContent(i,j,k) >0.0) { // this bin shows the location where there are leaking photon
@@ -1008,7 +1013,7 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		  if (at_det==10 || (at_det%1000) == 0) {
 		    h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // writing down detector number 10
-		    std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		    //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
 		  }
 		  integ = integ + h3at->GetBinContent(at_bin) ;
 		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
@@ -1036,7 +1041,7 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		    if (at_det==10 || (at_det%1000) == 0) {
 		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		      std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
 		      std::cout <<"Passed " <<  at_det << " " << test_r << " " << fData.D_dim_x << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
 		    }
 		    integ = integ + h3at->GetBinContent(at_bin);
@@ -1143,9 +1148,9 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
     if (ener == 200.0) {
       Hxy->Fill(vert_x,vert_y);
     }
-    if( (i%10000) == 0 ){
-      printf("Weight=%.1e  Efficiency=%.1e  nevent=%d \n",weight,efficiency->Eval(ener*1000),n_event);
-    }
+    // if( (i%10000) == 0 ){
+    //   printf("Weight=%.1e  Efficiency=%.1e  nevent=%d \n",weight,efficiency->Eval(ener*1000),n_event);
+    // }
     H3dloc->Fill(leak_x,leak_y,leak_z,weight); // this fills the location of the leak outside the surface with the weight decided by the efficiency at this energy
     FillHisto(Hxyz,leak_x,leak_y,leak_z,mom_x,mom_y,mom_z,weight);
     in = Hnx->FindBin(leak_x,leak_y,leak_z); // this bin is the same in all these histograms since they have the same dimensions
