@@ -808,7 +808,8 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
   int at_bin;
   double conversion_factor;
   int at_det = 0;
-  
+ 
+  std::cout << "Adding the info for each possible detector position " << std::endl;
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
     std::cout << "Scanning x bin " << i << " of total " << h3loc->GetNbinsX() << std::endl;
     for (int j = 0; j< h3loc->GetNbinsY() ; j++) {
@@ -965,6 +966,7 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
   int first_coll_bin;
   TVector3 v3_first;
   
+  std::cout << "Adding the info for each possible detector position " << std::endl; 
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
     std::cout << "Scanning x bin " << i << " of total " << h3loc->GetNbinsX() << std::endl;
 
@@ -1004,22 +1006,27 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 	  TH3D *h3at = (TH3D *)h3d->Clone("h3at");  // need a clone to set the bin count to 0 when already counted to avoid doublecounting the same bin
 	  first_coll_bin = 0;
 	  if (tdet ==1) { // box detector
-	    for (int ii=0 ; ii<1 ; ii++) { // just the front bin in Dim_z direction that is parallel to norm
-	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
-		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
-		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
-		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
-		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
-		  v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
-		  v3at = v3at + v3at_perp; // adding perp shift to location
-		  v3at = v3at + v3at_z; // adding z shift to location
-		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		  if (at_det==10 || (at_det%100) == 0) {
-		    h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // writing down detector number 10
-		    //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+	    for (int ii=0 ; ii<ceil(fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) { // just the front bin in Dim_z direction that is parallel to norm
+	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+	      v3_first = v3leak + v3at_norm;
+	      at_bin = h3at->FindBin(v3_first.X(),v3_first.Y(),v3_first.Z());
+	      if (first_coll_bin == 0 && h3at->GetBinContent(at_bin) > 0) {
+		first_coll_bin = 1; 
+		for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
+		  for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+		    v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
+		    v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
+		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		    v3at = v3at + v3at_perp; // adding perp shift to location
+		    v3at = v3at + v3at_z; // adding z shift to location
+		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		    if (at_det==10 || (at_det%100) == 0) {
+		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // writing down detector number 10
+		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		    }
+		    integ = integ + h3at->GetBinContent(at_bin) ;
+		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
-		  integ = integ + h3at->GetBinContent(at_bin) ;
-		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		}
 	      }
 	    }
@@ -1039,7 +1046,7 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 		    v3at = v3at_perp + v3at_z; // checking if radius (dim_x = dim_y) is less than shift in the detector
 		    test_r = v3at.Mag();
 		    if (at_det==10 || (at_det%100) == 0) {
-		      std::cout << at_det << " " << test_r << " " << fData.D_dim_x << " ii=" << ii << " jj=" << jj << " kk=" << kk << " " << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
+		      //		      std::cout << at_det << " " << test_r << " " << fData.D_dim_x << " ii=" << ii << " jj=" << jj << " kk=" << kk << " " << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
 		    }
 		    if (v3at.Mag() < fData.D_dim_x) {
 		      test_r = v3at.Mag();
@@ -1049,8 +1056,8 @@ void get_detector_coll(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, T
 		      at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
 		      if (at_det==10 || (at_det%100) == 0) {
 			h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-			std::cout << "at_det=" << at_det << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
-			std::cout <<"Passed " <<  at_det << " " << test_r << " " << fData.D_dim_x << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
+			//			std::cout << "at_det=" << at_det << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+			//			std::cout <<"Passed " <<  at_det << " " << test_r << " " << fData.D_dim_x << v3at.X() << " " << v3at.Y()<< " " << v3at.Z() << std::endl;
 		      }
 		      integ = integ + h3at->GetBinContent(at_bin);
 		      h3at->SetBinContent(at_bin,0.0); // to avoid double counting
@@ -1143,7 +1150,7 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   int bin2_histo_z =  ceil(fData.W_dim_z/min_dim) +ceil(2*max_dim/min_dim);
   if ((bin2_histo_z - 2*(bin2_histo_z/2))== 0) bin2_histo_z++;
 
-  printf("bin_X=%d  bin_Y=%d  bin_Z=%d \n",bin2_histo_x,bin2_histo_y,bin2_histo_z);
+  //  printf("bin_X=%d  bin_Y=%d  bin_Z=%d \n",bin2_histo_x,bin2_histo_y,bin2_histo_z);
 
   // TH1D *Htheta = new TH1D("Htheta","Htheta",1000,-3.14,3.14);
   // double theta1, theta2;
@@ -1160,6 +1167,7 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   TH3D *H3dbox = new TH3D("H3dbox","Histogram XYZ",bin_histo_x,-fData.W_dim_x/2-max_dim,fData.W_dim_x/2+max_dim,bin_histo_y,-fData.W_dim_y/2-max_dim,fData.W_dim_y/2+max_dim,bin_histo_z,-fData.W_dim_z/2-max_dim,fData.W_dim_z/2+max_dim); // mm size bins
 
   int n_print=fData.G_nev/10;
+  printf("Creating detector hits \n");
   for (int i=0; i<T->GetEntries(); i++) {
     if( (i%n_print) == 0 ){printf("Event %10d of total %10d \n", i,fData.G_nev);}
     T->GetEntry(i);
@@ -1205,6 +1213,8 @@ void analysis(int tdet, const char name_in[100],const char name_out[100],double 
   }
   //  efficiency->Draw();
   // Htheta->Write();
+  
+ 
   if (fData.D_coll == 0) get_detector(tdet,Hxyz,H3dloc,Hnx,Hny,Hnz,H3dout,H3dbox);
   else get_detector_coll(tdet,Hxyz,H3dloc,Hnx,Hny,Hnz,H3dout,H3dbox);
   TFile *fout = new TFile(name_out,"RECREATE");
