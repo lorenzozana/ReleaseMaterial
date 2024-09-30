@@ -808,6 +808,9 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
   int at_bin;
   double conversion_factor;
   int at_det = 0;
+  int first_coll_bin;
+  TVector3 v3_first;
+
  
   std::cout << "Adding the info for each possible detector position " << std::endl;
   for (int i =0 ; i< h3loc->GetNbinsX() ; i++) {
@@ -828,6 +831,8 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  norm_z = Hnz->GetBinContent(i,j,k);
 	  norm.SetXYZ(norm_x,norm_y,norm_z);
 	  norm.SetMag(1.); // direction of calibration of detector normalized to 1. 
+	  v3leak.SetXYZ(leak_x,leak_y,leak_z);
+	  v3leak = v3leak - 0.5*pow(3.,0.5)*h3loc->GetXaxis()->GetBinWidth(i)*norm; //  0.5*pow(3.,0.5)*h3loc->GetXaxis()->GetBinWidth(i) is the maximum distance from the center to the edge of the bin  
 	  v3perp = norm.Cross(v3z); // now I have the third direction of the detector
 	  if (v3perp.Mag() != 1.0 && v3perp.Mag()!=0.0 ) { // norm has a component in the y axis but is not in the y axis
 	    v3perp.SetMag(1.); // now set the magnitude to 1 and it is normal to v3z and norm
@@ -844,27 +849,36 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  at_x = leak_x ;
 	  at_y = leak_y ;
 	  at_z = leak_z ;
-	  v3leak.SetXYZ(leak_x,leak_y,leak_z);
+	  
 	  TH3D *h3at = (TH3D *)h3d->Clone("h3at");  // need a clone to set the bin count to 0 when already counted to avoid doublecounting the same bin
+	  first_coll_bin = 0;
+
 	  if (tdet ==1) { // box detector
 	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
 	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
-	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
-	      for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
-		for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
-		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
-		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
-		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
-		  v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
-		  v3at = v3at + v3at_perp; // adding perp shift to location
-		  v3at = v3at + v3at_z; // adding z shift to location
-		  at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		  if (at_det==10 || (at_det%100) == 0 ) {
-		    h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // show an example for detector number 10
-		    //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+	    for (int ii=0 ; ii<ceil((fData.D_dim_z+h3loc->GetXaxis()->GetBinWidth(1))/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
+	      // now I need to start the count at first bin > 0.0
+	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+	      v3_first = v3leak + v3at_norm;
+	      at_bin = h3at->FindBin(v3_first.X(),v3_first.Y(),v3_first.Z());
+	      if (h3at->GetBinContent(at_bin) > 0) first_coll_bin ++;
+	      if (first_coll_bin>0 && first_coll_bin < (fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) + 1.)) {
+		for (int jj=0 ; jj<fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis
+		  for (int kk=0 ; kk<fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1) ; kk++) {
+		    v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+		    v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_x) *v3perp; // shift in direction perp
+		    v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-0.5*fData.D_dim_y) *v3z; // shift in direction z
+		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		    v3at = v3at + v3at_perp; // adding perp shift to location
+		    v3at = v3at + v3at_z; // adding z shift to location
+		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		    if (at_det==10 || (at_det%100) == 0 ) {
+		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin)); // show an example for detector number 10
+		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		    }
+		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor ;
+		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
-		  integ = integ + h3at->GetBinContent(at_bin) / conversion_factor ;
-		  h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		}
 	      }
 	    }
@@ -873,23 +887,30 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
 	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
 	    for (int ii=0 ; ii<ceil(fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
-	      for (int jj=0 ; jj<2*ceil(fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1)) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
-		for (int kk=0 ; kk<2*ceil(fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1)) ; kk++) {
-		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
-		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_x) *v3perp; // shift in direction perp
-		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_y) *v3z; // shift in direction z
-		  v3at = v3at_perp + v3at_z; // checking if radius (dim_x/2 = dim_y/2) is less than shift in the detector
-		  if (v3at.Mag() < fData.D_dim_x) {
-		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
-		    v3at = v3at + v3at_perp; // adding perp shift to location
-		    v3at = v3at + v3at_z; // adding z shift to location
-		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		    if (at_det==10 || (at_det%100) == 0) {
-		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+	      // now I need to start the count at first bin > 0.0
+	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+	      v3_first = v3leak + v3at_norm;
+	      at_bin = h3at->FindBin(v3_first.X(),v3_first.Y(),v3_first.Z());
+	      if (h3at->GetBinContent(at_bin) > 0) first_coll_bin ++;
+	      if (first_coll_bin>0 && first_coll_bin < (fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) + 1.)) {
+		for (int jj=0 ; jj<2*ceil(fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1)) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
+		  for (int kk=0 ; kk<2*ceil(fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1)) ; kk++) {
+		    v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+		    v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_x) *v3perp; // shift in direction perp
+		    v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_y) *v3z; // shift in direction z
+		    v3at = v3at_perp + v3at_z; // checking if radius (dim_x/2 = dim_y/2) is less than shift in the detector
+		    if (v3at.Mag() < fData.D_dim_x) {
+		      v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		      v3at = v3at + v3at_perp; // adding perp shift to location
+		      v3at = v3at + v3at_z; // adding z shift to location
+		      at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		      if (at_det==10 || (at_det%100) == 0) {
+			h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+			//  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		      }
+		      integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
+		      h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		    }
-		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
-		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
 		}
 	      }
@@ -899,25 +920,32 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	    conversion_factor = 2*fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the x(or y) direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (x or y axis), the integral will be equal to this number) . 2* it is because it is the radius of the cylinder
 	    if (conversion_factor == 0.0) std::cout << "Cylinder detector x size= 0: Unphysical detector, the code will fail" << std::endl ; 
 	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
-	      for (int jj=0 ; jj<2*ceil(fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1)) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
-		for (int kk=0 ; kk<2*ceil(fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1)) ; kk++) {
-		  v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
-		  v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_x) *v3perp; // shift in direction perp
-		  v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_y) *v3z; // shift in direction z
-		  v3at = -0.5 * fData.D_dim_z * norm + v3at_perp + v3at_norm; // adding shift since center is not at leak surface
-		  // v3at = v3at + v3at_perp;
-		  // v3at = v3at + v3at_norm; // checking if radius (dim_z/2) is less than shift in the detector
-		  if (v3at.Mag() < fData.D_dim_x) {
-		    v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
-		    v3at = v3at + v3at_perp; // adding perp shift to location
-		    v3at = v3at + v3at_z; // adding z shift to location
-		    at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
-		    if (at_det==10 || (at_det%100) == 0) {
-		      h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
-		      //  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+	      // now I need to start the count at first bin > 0.0
+	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+	      v3_first = v3leak + v3at_norm;
+	      at_bin = h3at->FindBin(v3_first.X(),v3_first.Y(),v3_first.Z());
+	      if (h3at->GetBinContent(at_bin) > 0) first_coll_bin ++;
+	      if (first_coll_bin>0 && first_coll_bin < (fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) + 1.)) {
+		for (int jj=0 ; jj<2*ceil(fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1)) ; jj++) { // It is important to keep the binning of the acceptance histogram the same size in all 3 axis (in this case dim_y = dim_x
+		  for (int kk=0 ; kk<2*ceil(fData.D_dim_y/h3d->GetXaxis()->GetBinWidth(1)) ; kk++) {
+		    v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
+		    v3at_perp =  (double(jj)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_x) *v3perp; // shift in direction perp
+		    v3at_z = (double(kk)*h3d->GetXaxis()->GetBinWidth(1)-fData.D_dim_y) *v3z; // shift in direction z
+		    v3at = -0.5 * fData.D_dim_z * norm + v3at_perp + v3at_norm; // adding shift since center is not at leak surface
+		    // v3at = v3at + v3at_perp;
+		    // v3at = v3at + v3at_norm; // checking if radius (dim_z/2) is less than shift in the detector
+		    if (v3at.Mag() < fData.D_dim_x) {
+		      v3at =  v3leak + v3at_norm; // adding norm shift to locaction (the TVector3 class just accept a single addition
+		      v3at = v3at + v3at_perp; // adding perp shift to location
+		      v3at = v3at + v3at_z; // adding z shift to location
+		      at_bin = h3at->FindBin(v3at.X(),v3at.Y(),v3at.Z());
+		      if (at_det==10 || (at_det%100) == 0) {
+			h3dbox->Fill(v3at.X(),v3at.Y(),v3at.Z(),h3at->GetBinContent(at_bin));
+			//  std::cout << "at_bin=" << at_bin << "  leak_x=" << leak_x <<  " leak_y=" << leak_y <<   " leak_z=" << leak_z << " ii=" << ii << " jj=" << jj << " kk=" << kk << " at(x)=" << v3at.X()<< " at(y)=" << v3at.Y() << " at(z)=" << v3at.Z() << " val=" <<  h3at->GetBinContent(at_bin) << std::endl;
+		      }
+		      integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
+		      h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		    }
-		    integ = integ + h3at->GetBinContent(at_bin) / conversion_factor;
-		    h3at->SetBinContent(at_bin,0.0); // to avoid double counting
 		  }
 		}
 	      }
