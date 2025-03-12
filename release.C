@@ -886,7 +886,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  if (tdet ==2) { // cylinder detector with z axis parallel to normal to surface
 	    conversion_factor = fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the z direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (z axis), the integral will be equal to this number)
 	    if (conversion_factor == 0.0) std::cout << "Box detector z size= 0: Unphysical detector, the code will fail" << std::endl ; 
-	    for (int ii=0 ; ii<ceil(fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
+	    for (int ii=0 ; ii<ceil((fData.D_dim_z+h3loc->GetXaxis()->GetBinWidth(1))/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
 	      // now I need to start the count at first bin > 0.0
 	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
 	      v3_first = v3leak + v3at_norm;
@@ -919,7 +919,7 @@ void get_detector(int tdet, TH3D *h3d, TH3D *h3loc, TH3D *Hnx, TH3D *Hny, TH3D *
 	  if (tdet ==3) { // cylinder detector with z axis perpendicular to normal to surface (I use v3z)
 	    conversion_factor = 2*fData.D_dim_x/h3d->GetXaxis()->GetBinWidth(1); // This represents how many bins will be in the x(or y) direction (by definition the direction of operation). In this way the probability get normalized after integration (if just a single photon travels in the direction of perfect operation (x or y axis), the integral will be equal to this number) . 2* it is because it is the radius of the cylinder
 	    if (conversion_factor == 0.0) std::cout << "Cylinder detector x size= 0: Unphysical detector, the code will fail" << std::endl ; 
-	    for (int ii=0 ; ii<fData.D_dim_z/h3d->GetXaxis()->GetBinWidth(1) ; ii++) {
+	    for (int ii=0 ; ii<ceil((fData.D_dim_z+h3loc->GetXaxis()->GetBinWidth(1))/h3d->GetXaxis()->GetBinWidth(1)) ; ii++) {
 	      // now I need to start the count at first bin > 0.0
 	      v3at_norm = (double(ii)*h3d->GetXaxis()->GetBinWidth(1)) *norm; // shift in direction norm
 	      v3_first = v3leak + v3at_norm;
